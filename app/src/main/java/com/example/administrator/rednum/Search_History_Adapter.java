@@ -61,12 +61,20 @@ public class Search_History_Adapter extends BaseAdapter {
         holder.searchHistoryItem.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(context, SearchResultActivity.class);
-                String contnet = (String) ((TextView)view).getText();
-                intent.putExtra("keyword", contnet);
-                context.startActivity(intent);
+                if(!SearchActivity.isSearching){
+                    SearchActivity.progressBar.setVisibility(View.VISIBLE);
+                    SearchActivity.isSearching = true;
+                    Intent intent = new Intent(context, SearchResultActivity.class);
+                    String contnet = (String) ((TextView)view).getText();
+                    intent.putExtra("keyword", contnet);
+                    context.startActivity(intent);
 
-                SearchActivity.getSearchKeyWord(contnet);
+                    SearchActivity.progressBar.setVisibility(View.GONE);
+                    SearchActivity.isSearching = false;
+
+                    SearchActivity.getSearchKeyWord(contnet);
+                }
+
             }
         });
         holder.delete.setOnClickListener(new View.OnClickListener() {

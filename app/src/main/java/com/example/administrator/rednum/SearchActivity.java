@@ -19,6 +19,7 @@ import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,6 +46,8 @@ public class SearchActivity extends Activity {
     private TextView tv;
 
     private EditText search;
+    protected static ProgressBar progressBar;
+    protected static boolean isSearching = false;
 
     private String homePage;
     private Gson gson;
@@ -71,10 +74,10 @@ public class SearchActivity extends Activity {
     private static Search_History_Adapter adapter = null;
 
 
-    public static void getSearchKeyWord(String search_Key_Word){
+    public static void getSearchKeyWord(String search_Key_Word) {
         if (searchHistory.size() == 0 || (searchHistory.size() >= 1 && !search_Key_Word.equals(searchHistory.get(0)))) {
             searchHistory.add(0, search_Key_Word);
-            if(adapter != null){
+            if (adapter != null) {
                 adapter.notifyDataSetChanged();
             }
         }
@@ -100,21 +103,27 @@ public class SearchActivity extends Activity {
                 super.handleMessage(msg);
                 switch (msg.what) {
                     case 201:
+                        progressBar.setVisibility(View.GONE);
                         Intent intent = new Intent(SearchActivity.this, SearchResultActivity.class);
                         RedNumApplication redNum = (RedNumApplication) getApplication();
                         redNum.setFilterSearchList(data);
                         startActivity(intent);
 
                         getSearchKeyWord(classBufferStr);
+                        isSearching = false;
 
                         break;
 
                     case 202:
+                        progressBar.setVisibility(View.GONE);
+                        isSearching = false;
                         Toast.makeText(getApplicationContext(), "指定内容不存在", Toast.LENGTH_SHORT).show();
 
                         break;
 
                     case 199:
+                        progressBar.setVisibility(View.GONE);
+                        isSearching = false;
                         Toast.makeText(getApplicationContext(), "无网络连接", Toast.LENGTH_SHORT).show();
                         break;
 
@@ -130,24 +139,29 @@ public class SearchActivity extends Activity {
         search = findViewById(R.id.search);
 
         conductSearch = findViewById(R.id.conduct_search);
-
+        progressBar = findViewById(R.id.progress);
         flowLayout = findViewById(R.id.flowlayout);
 
         listView = findViewById(R.id.search_history);
 
-        conductSearch.setOnClickListener(new View.OnClickListener(){
+        conductSearch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String searchContent = search.getText().toString();
-                if(!"".equals(searchContent)){
-                    getSearchData(searchContent);
-//                    getSearchKeyWord(searchContent);
+                if (!isSearching) {
+                    String searchContent = search.getText().toString();
+                    if (!"".equals(searchContent)) {
+                        progressBar.setVisibility(View.VISIBLE);
+                        getSearchData(searchContent);
+                        isSearching = true;
+                    }else{
+                        Toast.makeText(getApplicationContext(), "搜索内容不能为空", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         });
 
 
-        for (int i = 0; i < length; i++){
+        for (int i = 0; i < length; i++) {
             int ranHeight = dip2px(this, 30);
             ViewGroup.MarginLayoutParams lp = new ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ranHeight);
             lp.setMargins(dip2px(this, 3), 0, dip2px(this, 3), 0);
@@ -169,7 +183,7 @@ public class SearchActivity extends Activity {
             flowLayout.relayoutToCompress();
         }
 
-        if (preferences.contains("history_length") && preferences.getInt("history_length", 0) > 0){
+        if (preferences.contains("history_length") && preferences.getInt("history_length", 0) > 0) {
             for (int i = 0; i < preferences.getInt("history_length", 0); i++) {
                 searchHistory.add(preferences.getString("history" + i, ""));
             }
@@ -178,12 +192,6 @@ public class SearchActivity extends Activity {
 
         adapter = new Search_History_Adapter(this, searchHistory);
         listView.setAdapter(adapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-
-            }
-        });
     }
 
     public static int dip2px(Context context, float dpValue) {
@@ -199,8 +207,12 @@ public class SearchActivity extends Activity {
     class TextViewOnClickListener implements View.OnClickListener {
         @Override
         public void onClick(View view) {
-            String searchContent = ((TextView) view).getText().toString();
-            getSearchData(searchContent);
+            if (!isSearching) {
+                progressBar.setVisibility(View.VISIBLE);
+                String searchContent = ((TextView) view).getText().toString();
+                getSearchData(searchContent);
+                isSearching = true;
+            }
         }
     }
 
@@ -228,8 +240,6 @@ public class SearchActivity extends Activity {
         classBufferStr = keyword;
         final String key = keyword;
 
-        Log.i("key", "key1=" + key);
-
         gson = new Gson();
         new Thread(new Runnable() {
             @Override
@@ -237,7 +247,7 @@ public class SearchActivity extends Activity {
                 if (NetworkProcessor.isNetworkAvailable(SearchActivity.this)) {
                     homePage = NetworkProcessor.getHomePage();
 
-                    if("".equals(homePage) || homePage == null){
+                    if ("".equals(homePage) || homePage == null) {
                         handler.sendEmptyMessage(199);
                         return;
                     }

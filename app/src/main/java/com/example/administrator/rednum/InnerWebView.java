@@ -48,6 +48,7 @@ public class InnerWebView extends Activity {
     private LinkedList<HashMap<String, Object>> data;
     private LinkedList<HashMap<String, Object>> data2;
     private String classBufferStr = null;
+    private boolean isSearching = false;
 
     private Handler handler = null;
 
@@ -62,13 +63,14 @@ public class InnerWebView extends Activity {
         url = intent.getStringExtra("itemURL");
 
 
-
         handler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
                 switch (msg.what) {
                     case 201:
+                        progressBar.setVisibility(View.GONE);
+                        isSearching = false;
                         Intent intent = new Intent(InnerWebView.this, SearchResultActivity.class);
                         RedNumApplication redNum = (RedNumApplication) getApplication();
                         redNum.setFilterSearchList(data);
@@ -77,11 +79,15 @@ public class InnerWebView extends Activity {
                         break;
 
                     case 202:
+                        progressBar.setVisibility(View.GONE);
+                        isSearching = false;
                         Toast.makeText(getApplicationContext(), "指定内容不存在", Toast.LENGTH_SHORT).show();
 
                         break;
 
                     case 199:
+                        progressBar.setVisibility(View.GONE);
+                        isSearching = false;
                         Toast.makeText(getApplicationContext(), "无网络连接", Toast.LENGTH_SHORT).show();
                         break;
 
@@ -95,20 +101,25 @@ public class InnerWebView extends Activity {
         data2 = new LinkedList<>();
 
 
-
         webView = findViewById(R.id.webview);
         searchEditText = findViewById(R.id.inner_search);
         progressBar = findViewById(R.id.progress);
         searchEditText = findViewById(R.id.inner_search);
         searchButton = findViewById(R.id.conduct_search);
 
-        searchButton.setOnClickListener(new View.OnClickListener(){
+        searchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String searchContent = searchEditText.getText().toString();
-                if(!"".equals(searchContent)){
-                    getSearchData(searchContent);
-                    SearchActivity.getSearchKeyWord(searchContent);
+                if (!isSearching) {
+                    String searchContent = searchEditText.getText().toString();
+                    if (!"".equals(searchContent)) {
+                        progressBar.setVisibility(View.VISIBLE);
+                        isSearching = true;
+                        getSearchData(searchContent);
+                        SearchActivity.getSearchKeyWord(searchContent);
+                    }else{
+                        Toast.makeText(getApplicationContext(), "搜索内容不能为空", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         });
@@ -174,7 +185,6 @@ public class InnerWebView extends Activity {
     }
 
 
-
     private void getSearchData(String keyword) {
         classBufferStr = keyword;
         final String key = keyword;
@@ -187,7 +197,7 @@ public class InnerWebView extends Activity {
             public void run() {
                 if (NetworkProcessor.isNetworkAvailable(InnerWebView.this)) {
                     homePage = NetworkProcessor.getHomePage();
-                    if("".equals(homePage) || homePage == null){
+                    if ("".equals(homePage) || homePage == null) {
                         handler.sendEmptyMessage(199);
                         return;
                     }
