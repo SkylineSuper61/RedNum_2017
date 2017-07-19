@@ -17,6 +17,7 @@ import android.view.Window;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -53,6 +54,7 @@ public class MainActivity extends Activity {
 
     private BroadcastReceiver networkChange;
     private IntentFilter networkChangeFilter;
+    private ProgressBar progressBar;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -64,10 +66,12 @@ public class MainActivity extends Activity {
                 super.handleMessage(msg);
                 switch (msg.what) {
                     case 101:
+                        progressBar.setVisibility(View.GONE);
                         adapter.notifyDataSetChanged();
                         break;
 
                     case 99:
+                        progressBar.setVisibility(View.GONE);
                         Toast.makeText(getApplicationContext(), "无网络连接", Toast.LENGTH_SHORT).show();
                         break;
 
@@ -129,6 +133,8 @@ public class MainActivity extends Activity {
 
         searchText = activity_view.findViewById(R.id.search);
         listView = activity_view.findViewById(R.id.mainlist);
+        progressBar = activity_view.findViewById(R.id.progress);
+        progressBar.setVisibility(View.VISIBLE);
 
         data = new LinkedList<>();
         data2 = new LinkedList<>();
